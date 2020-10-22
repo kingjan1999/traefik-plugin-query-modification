@@ -67,5 +67,5 @@ There are two nays:
 
 ### Deleting existing parameters (`type = "delete"`)
 
-This deletes an existing parameters including all of it's values. Specifying the affected parameters works the same as above.
+This deletes an existing parameters including all of it's values. Specifying the affected parameters works the same [as above](https://github.com/kingjan1999/traefik-plugin-query-modification#specifying-parameter).
 Example: `type="delete",paramValueRegex="password"` transforms `?secret=password&othersecret=other-password&tracker=1234` into `tracker=1234`
