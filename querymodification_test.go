@@ -96,6 +96,16 @@ func TestDeleteQueryParam_Others(t *testing.T) {
 	assertQueryModification(t, cfg, previous, expected)
 }
 
+func TestDeleteQueryParam_Readme(t *testing.T) {
+	cfg := traefik_plugin_query_modification.CreateConfig()
+	cfg.Type = "delete"
+	cfg.ParamValueRegex = "password"
+	expected := "tracker=1234"
+	previous := "secret=password&othersecret=other-password&tracker=1234"
+
+	assertQueryModification(t, cfg, previous, expected)
+}
+
 //endregion
 
 // region Modify
