@@ -1,0 +1,9 @@
+displayName: Query Paramter Modification
+type: middleware
+import: github.com/kingjan1999/traefik-plugin-query-modification
+summary: Add / modify / delete the query parameters of a request
+testData:
+  Type: Modify
+  ParamName: param
+  NewValue: newVal
+
