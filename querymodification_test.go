@@ -26,8 +26,9 @@ func TestAddQueryParam_OtherPrevious(t *testing.T) {
 	cfg.ParamName = "newparam"
 	cfg.NewValue = "newvalue"
 	expected := "a=b&newparam=newvalue"
+	previous := "a=b"
 
-	assertQueryModification(t, cfg, "a=b", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 func TestAddQueryParam_AddPrevious(t *testing.T) {
@@ -36,8 +37,9 @@ func TestAddQueryParam_AddPrevious(t *testing.T) {
 	cfg.ParamName = "newparam"
 	cfg.NewValue = "newvalue"
 	expected := "newparam=oldvalue&newparam=newvalue"
+	previous := "newparam=oldvalue"
 
-	assertQueryModification(t, cfg, "newparam=oldvalue", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 func TestAddQueryParam_Previous(t *testing.T) {
@@ -46,8 +48,9 @@ func TestAddQueryParam_Previous(t *testing.T) {
 	cfg.ParamName = "newparam"
 	cfg.NewValue = "newvalue"
 	expected := "a=b&newparam=newvalue"
+	previous := "a=b"
 
-	assertQueryModification(t, cfg, "a=b", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 // endregion
@@ -58,8 +61,9 @@ func TestDeleteQueryParam(t *testing.T) {
 	cfg.Type = "delete"
 	cfg.ParamName = "paramtodelete"
 	expected := ""
+	previous := "paramtodelete=anything"
 
-	assertQueryModification(t, cfg, "paramtodelete=anything", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 func TestDeleteQueryParam_Multiple(t *testing.T) {
@@ -67,8 +71,9 @@ func TestDeleteQueryParam_Multiple(t *testing.T) {
 	cfg.Type = "delete"
 	cfg.ParamName = "paramtodelete"
 	expected := ""
+	previous := "paramtodelete=anything&paramtodelete=somethingelse"
 
-	assertQueryModification(t, cfg, "paramtodelete=anything&paramtodelete=somethingelse", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 func TestDeleteQueryParam_NotFound(t *testing.T) {
@@ -76,8 +81,9 @@ func TestDeleteQueryParam_NotFound(t *testing.T) {
 	cfg.Type = "delete"
 	cfg.ParamName = "paramtodelete"
 	expected := "some=thing"
+	previous := "some=thing"
 
-	assertQueryModification(t, cfg, "some=thing", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 func TestDeleteQueryParam_Others(t *testing.T) {
@@ -85,8 +91,9 @@ func TestDeleteQueryParam_Others(t *testing.T) {
 	cfg.Type = "delete"
 	cfg.ParamName = "paramtodelete"
 	expected := "otherparam=stillhere"
+	previous := "otherparam=stillhere&paramtodelete=away"
 
-	assertQueryModification(t, cfg, "otherparam=stillhere&paramtodelete=away", expected)
+	assertQueryModification(t, cfg, previous, expected)
 }
 
 //endregion

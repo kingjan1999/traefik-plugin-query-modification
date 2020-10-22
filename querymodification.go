@@ -127,6 +127,7 @@ func (q *QueryModification) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 	}
 
 	req.URL.RawQuery = qry.Encode()
+	req.RequestURI = req.URL.RequestURI()
 
 	q.next.ServeHTTP(rw, req)
 }
