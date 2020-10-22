@@ -9,16 +9,17 @@ import (
 	"strings"
 )
 
-type ModificationType string
+type modificationType string
 
 const (
-	Add    ModificationType = "add"
-	Modify ModificationType = "modify"
-	Delete ModificationType = "delete"
+	addType    modificationType = "add"
+	modifyType modificationType = "modify"
+	deleteType modificationType = "delete"
 )
 
+// Config is the configuration for this plugin
 type Config struct {
-	Type            ModificationType `json:"type"`
+	Type            modificationType `json:"type"`
 	ParamName       string           `json:"paramName"`
 	ParamNameRegex  string           `json:"paramNameRegex"`
 	ParamValueRegex string           `json:"paramValueRegex"`
@@ -26,10 +27,12 @@ type Config struct {
 	NewValueRegex   string           `json:"newValueRegex"`
 }
 
+// CreateConfig creates a new configuration for this plugin
 func CreateConfig() *Config {
 	return &Config{}
 }
 
+// QueryModification represents the basic properties of this plugin
 type QueryModification struct {
 	next                    http.Handler
 	name                    string
@@ -38,6 +41,7 @@ type QueryModification struct {
 	paramValueRegexCompiled *regexp.Regexp
 }
 
+// New creates a new instance of this plugin
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	if !config.Type.isValid() {
 		return nil, errors.New("invalid modification type, expected add / modify / delete")
@@ -87,16 +91,16 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 func (q *QueryModification) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	qry := req.URL.Query()
 	switch q.config.Type {
-	case Add:
+	case addType:
 		qry.Add(q.config.ParamName, q.config.NewValue)
 		break
-	case Delete:
+	case deleteType:
 		paramsToDelete := determineAffectedParams(req, q)
 		for _, paramToDelete := range paramsToDelete {
 			qry.Del(paramToDelete)
 		}
 		break
-	case Modify:
+	case modifyType:
 		paramsToModify := determineAffectedParams(req, q)
 		for _, paramToModify := range paramsToModify {
 			// use "old" query to prevent unwanted side effects
@@ -154,9 +158,9 @@ func anyMatch(values []string, regex *regexp.Regexp) bool {
 	return false
 }
 
-func (mt ModificationType) isValid() bool {
+func (mt modificationType) isValid() bool {
 	switch mt {
-	case Add, Modify, Delete, "":
+	case addType, modifyType, deleteType, "":
 		return true
 	}
 
