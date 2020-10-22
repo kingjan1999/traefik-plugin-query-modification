@@ -36,7 +36,6 @@ type QueryModification struct {
 	config                  *Config
 	paramNameRegexCompiled  *regexp.Regexp
 	paramValueRegexCompiled *regexp.Regexp
-	newValueRegexCompiled   *regexp.Regexp
 }
 
 func New(ctx context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
@@ -48,9 +47,9 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		return nil, errors.New("either paramNameRegex or paramName or paramValueRegex must be set")
 	}
 
-	if config.ParamNameRegex != "" && !containsEmpty(config.ParamName, config.ParamValueRegex) ||
-		config.ParamName != "" && !containsEmpty(config.ParamNameRegex, config.ParamValueRegex) ||
-		config.ParamValueRegex != "" && !containsEmpty(config.ParamName, config.ParamNameRegex) {
+	if config.ParamNameRegex != "" && containsNonEmpty(config.ParamName, config.ParamValueRegex) ||
+		config.ParamName != "" && containsNonEmpty(config.ParamNameRegex, config.ParamValueRegex) ||
+		config.ParamValueRegex != "" && containsNonEmpty(config.ParamName, config.ParamNameRegex) {
 		log.Println("[Plugin Query Modification] It is discouraged to use multiple param matchers at once. Please proceed with caution")
 	}
 
@@ -76,22 +75,12 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 		}
 	}
 
-	var newValueRegexCompiled *regexp.Regexp = nil
-	if config.NewValueRegex != "" {
-		var err error
-		newValueRegexCompiled, err = regexp.Compile(config.NewValueRegex)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return &QueryModification{
 		next:                    next,
 		name:                    name,
 		config:                  config,
 		paramNameRegexCompiled:  paramNameRegexCompiled,
 		paramValueRegexCompiled: paramValueRegexCompiled,
-		newValueRegexCompiled:   newValueRegexCompiled,
 	}, nil
 }
 
@@ -116,14 +105,19 @@ func (q *QueryModification) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 			for _, oldValue := range oldValues {
 				var newValue string
 				if q.paramValueRegexCompiled == nil || q.paramValueRegexCompiled.MatchString(oldValue) {
-					if q.newValueRegexCompiled != nil {
-						q.newValueRegexCompiled.
+					if q.paramValueRegexCompiled != nil && q.config.NewValueRegex != "" {
+						// case 1: The regex for the query value matches and NewValueRegex is not empty
+						// then use these to determine the new value
+						newValue = q.paramValueRegexCompiled.ReplaceAllString(oldValue, q.config.NewValueRegex)
 					} else {
+						// case 2: There is no regex for the query value or it didn't match
+						// (because the query key is in here for some other reason (i.e. the key matches)
+						// then use the non-regex as replacement (maybe replace "$1" with the old value)
 						newValue = strings.ReplaceAll(q.config.NewValue, "$1", oldValue)
-						newValues = append(newValues, newValue)
 					}
 				} else {
-					//
+					// case 3: There is a value regex which didn't match
+					// we do nothing then
 					newValue = oldValue
 				}
 				newValues = append(newValues, newValue)
@@ -168,9 +162,9 @@ func (mt ModificationType) isValid() bool {
 	return false
 }
 
-func containsEmpty(ss ...string) bool {
+func containsNonEmpty(ss ...string) bool {
 	for _, s := range ss {
-		if s == "" {
+		if s != "" {
 			return true
 		}
 	}

@@ -1,4 +1,4 @@
-package traefik_plugin_query_modification
+package traefik_plugin_query_modification_test
 
 import (
 	"context"
@@ -165,6 +165,17 @@ func TestModifyQueryParam_RegexValue(t *testing.T) {
 	cfg.NewValue = "censored"
 	previous := "a=secretpassword&b=secretpassword&c=somethingelse"
 	expected := "a=censored&b=censored&c=somethingelse"
+
+	assertQueryModification(t, cfg, previous, expected)
+}
+
+func TestModifyQueryParam_RegexValueRegexReplace(t *testing.T) {
+	cfg := traefik_plugin_query_modification.CreateConfig()
+	cfg.Type = "modify"
+	cfg.ParamValueRegex = "^.*(p..sword)$"
+	cfg.NewValueRegex = "no-$1"
+	previous := "a=secretpassword&b=secretpassword&c=somethingelse"
+	expected := "a=no-password&b=no-password&c=somethingelse"
 
 	assertQueryModification(t, cfg, previous, expected)
 }
