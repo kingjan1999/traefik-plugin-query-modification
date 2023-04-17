@@ -5,8 +5,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
-	"strings"
 )
 
 type modificationType string
@@ -89,48 +89,10 @@ func New(ctx context.Context, next http.Handler, config *Config, name string) (h
 }
 
 func (q *QueryModification) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	qry := req.URL.Query()
-	switch q.config.Type {
-	case addType:
-		qry.Add(q.config.ParamName, q.config.NewValue)
-		break
-	case deleteType:
-		paramsToDelete := determineAffectedParams(req, q)
-		for _, paramToDelete := range paramsToDelete {
-			qry.Del(paramToDelete)
-		}
-		break
-	case modifyType:
-		paramsToModify := determineAffectedParams(req, q)
-		for _, paramToModify := range paramsToModify {
-			// use "old" query to prevent unwanted side effects
-			oldValues := req.URL.Query()[paramToModify]
-			var newValues []string
-			for _, oldValue := range oldValues {
-				var newValue string
-				if q.paramValueRegexCompiled == nil || q.paramValueRegexCompiled.MatchString(oldValue) {
-					if q.paramValueRegexCompiled != nil && q.config.NewValueRegex != "" {
-						// case 1: The regex for the query value matches and NewValueRegex is not empty
-						// then use these to determine the new value
-						newValue = q.paramValueRegexCompiled.ReplaceAllString(oldValue, q.config.NewValueRegex)
-					} else {
-						// case 2: There is no regex for the query value or it didn't match
-						// (because the query key is in here for some other reason (i.e. the key matches)
-						// then use the non-regex as replacement (maybe replace "$1" with the old value)
-						newValue = strings.ReplaceAll(q.config.NewValue, "$1", oldValue)
-					}
-				} else {
-					// case 3: There is a value regex which didn't match
-					// we do nothing then
-					newValue = oldValue
-				}
-				newValues = append(newValues, newValue)
-			}
-			qry[paramToModify] = newValues
-		}
-	}
+	v := url.Values{}
+	v.Add(q.config.ParamName, q.config.NewValue)
 
-	req.URL.RawQuery = qry.Encode()
+	req.URL.RawQuery = v.Encode()
 	req.RequestURI = req.URL.RequestURI()
 
 	q.next.ServeHTTP(rw, req)
